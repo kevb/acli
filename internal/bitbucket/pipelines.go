@@ -221,7 +221,7 @@ func (c *Client) GetStepLog(workspace, repoSlug, pipelineUUID, stepUUID string) 
 	path := fmt.Sprintf("/repositories/%s/%s/pipelines/%s/steps/%s/log",
 		url.PathEscape(workspace), url.PathEscape(repoSlug),
 		url.PathEscape(pipelineUUID), url.PathEscape(stepUUID))
-	data, err := c.get(path)
+	data, err := c.getRaw(path)
 	if err != nil {
 		return "", err
 	}

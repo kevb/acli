@@ -78,6 +78,36 @@ func (c *Client) get(path string) ([]byte, error) {
 	return c.do(http.MethodGet, path, nil)
 }
 
+// getRaw performs a GET without setting Accept: application/json (for text endpoints like diffs/logs).
+func (c *Client) getRaw(path string) ([]byte, error) {
+	url := baseURL + path
+	if strings.HasPrefix(path, "http") {
+		url = path
+	}
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	if c.email != "" {
+		req.SetBasicAuth(c.email, c.token)
+	} else {
+		req.Header.Set("Authorization", "Bearer "+c.token)
+	}
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(data))
+	}
+	return data, nil
+}
+
 func (c *Client) post(path string, body io.Reader) ([]byte, error) {
 	return c.do(http.MethodPost, path, body)
 }

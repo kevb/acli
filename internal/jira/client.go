@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/chinmaymk/acli/internal/config"
@@ -188,7 +189,7 @@ func (c *Client) UploadFile(path string, fieldName string, filePath string, v in
 
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
-	part, err := writer.CreateFormFile(fieldName, filePath)
+	part, err := writer.CreateFormFile(fieldName, filepath.Base(filePath))
 	if err != nil {
 		return fmt.Errorf("creating form file: %w", err)
 	}

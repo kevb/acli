@@ -46,7 +46,11 @@ func (c *Client) ConfluenceV2(method, path string, query url.Values, body interf
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
 
-	req.SetBasicAuth(c.Email, c.APIToken)
+	if c.Email != "" {
+		req.SetBasicAuth(c.Email, c.APIToken)
+	} else {
+		req.Header.Set("Authorization", "Bearer "+c.APIToken)
+	}
 	req.Header.Set("Accept", "application/json")
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
