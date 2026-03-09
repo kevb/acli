@@ -1079,7 +1079,7 @@ type SprintIssuesResponse struct {
 	MaxResults int     `json:"maxResults"`
 	StartAt    int     `json:"startAt"`
 	Total      int     `json:"total"`
-	Issues     []Issue `json:"issues"`
+	Issues     []IssueDetailed `json:"issues"`
 }
 
 // Epic represents a Jira Agile epic.

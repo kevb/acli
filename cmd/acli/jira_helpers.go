@@ -49,7 +49,7 @@ func truncate(s string, maxLen int) string {
 }
 
 // printIssueRow prints a single issue row to a tabwriter (shared by board/sprint/search).
-func printIssueRow(w *tabwriter.Writer, issue jira.Issue) {
+func printIssueRow(w *tabwriter.Writer, issue jira.IssueDetailed) {
 	issueType := ""
 	if issue.Fields.IssueType != nil {
 		issueType = issue.Fields.IssueType.Name
