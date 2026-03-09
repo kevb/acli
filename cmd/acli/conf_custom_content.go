@@ -211,35 +211,131 @@ func init() {
 	deleteCustomContentCmd.Flags().Bool("purge", false, "Purge the custom content")
 	confCustomContentCmd.AddCommand(deleteCustomContentCmd)
 
-	// custom-content sub-resources
-	for _, sub := range []struct {
-		use, short, path string
-	}{
-		{"attachments [id]", "Get attachments for custom content", "/attachments"},
-		{"children [id]", "Get child custom content", "/children"},
-		{"labels [id]", "Get labels for custom content", "/labels"},
-		{"comments [id]", "Get footer comments for custom content", "/footer-comments"},
-		{"operations [id]", "Get permitted operations", "/operations"},
-		{"versions [id]", "Get custom content versions", "/versions"},
-	} {
-		sub := sub
-		subCmd := &cobra.Command{
-			Use:   sub.use,
-			Short: sub.short,
-			Args:  cobra.ExactArgs(1),
-			RunE: func(cmd *cobra.Command, args []string) error {
-				q := getPaginationQuery(cmd)
-				data, err := confGet(cmd, "/custom-content/"+args[0]+sub.path, q)
-				if err != nil {
-					return err
-				}
-				printJSON(data)
-				return nil
-			},
-		}
-		addPaginationFlags(subCmd)
-		confCustomContentCmd.AddCommand(subCmd)
+	// custom-content attachments
+	ccAttachmentsCmd := &cobra.Command{
+		Use:   "attachments [id]",
+		Short: "Get attachments for custom content",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			q := getPaginationQuery(cmd)
+			if m := getStringFlag(cmd, "media-type"); m != "" {
+				q.Set("mediaType", m)
+			}
+			if f := getStringFlag(cmd, "filename"); f != "" {
+				q.Set("filename", f)
+			}
+			data, err := confGet(cmd, "/custom-content/"+args[0]+"/attachments", q)
+			if err != nil {
+				return err
+			}
+			printJSON(data)
+			return nil
+		},
 	}
+	addPaginationFlags(ccAttachmentsCmd)
+	addSortFlag(ccAttachmentsCmd)
+	addStatusFlag(ccAttachmentsCmd)
+	ccAttachmentsCmd.Flags().String("media-type", "", "Filter by media type")
+	ccAttachmentsCmd.Flags().String("filename", "", "Filter by filename")
+	confCustomContentCmd.AddCommand(ccAttachmentsCmd)
+
+	// custom-content children
+	ccChildrenCmd := &cobra.Command{
+		Use:   "children [id]",
+		Short: "Get child custom content",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			q := getPaginationQuery(cmd)
+			data, err := confGet(cmd, "/custom-content/"+args[0]+"/children", q)
+			if err != nil {
+				return err
+			}
+			printJSON(data)
+			return nil
+		},
+	}
+	addPaginationFlags(ccChildrenCmd)
+	addSortFlag(ccChildrenCmd)
+	confCustomContentCmd.AddCommand(ccChildrenCmd)
+
+	// custom-content labels
+	ccLabelsCmd := &cobra.Command{
+		Use:   "labels [id]",
+		Short: "Get labels for custom content",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			q := getPaginationQuery(cmd)
+			if p := getStringFlag(cmd, "prefix"); p != "" {
+				q.Set("prefix", p)
+			}
+			data, err := confGet(cmd, "/custom-content/"+args[0]+"/labels", q)
+			if err != nil {
+				return err
+			}
+			printJSON(data)
+			return nil
+		},
+	}
+	addPaginationFlags(ccLabelsCmd)
+	addSortFlag(ccLabelsCmd)
+	ccLabelsCmd.Flags().String("prefix", "", "Filter by prefix")
+	confCustomContentCmd.AddCommand(ccLabelsCmd)
+
+	// custom-content comments
+	ccCommentsCmd := &cobra.Command{
+		Use:   "comments [id]",
+		Short: "Get footer comments for custom content",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			q := getPaginationQuery(cmd)
+			data, err := confGet(cmd, "/custom-content/"+args[0]+"/footer-comments", q)
+			if err != nil {
+				return err
+			}
+			printJSON(data)
+			return nil
+		},
+	}
+	addPaginationFlags(ccCommentsCmd)
+	addSortFlag(ccCommentsCmd)
+	addBodyFormatFlag(ccCommentsCmd)
+	confCustomContentCmd.AddCommand(ccCommentsCmd)
+
+	// custom-content operations
+	ccOpsCmd := &cobra.Command{
+		Use:   "operations [id]",
+		Short: "Get permitted operations",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			data, err := confGet(cmd, "/custom-content/"+args[0]+"/operations", nil)
+			if err != nil {
+				return err
+			}
+			printJSON(data)
+			return nil
+		},
+	}
+	confCustomContentCmd.AddCommand(ccOpsCmd)
+
+	// custom-content versions
+	ccVersionsCmd := &cobra.Command{
+		Use:   "versions [id]",
+		Short: "Get custom content versions",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			q := getPaginationQuery(cmd)
+			data, err := confGet(cmd, "/custom-content/"+args[0]+"/versions", q)
+			if err != nil {
+				return err
+			}
+			printJSON(data)
+			return nil
+		},
+	}
+	addPaginationFlags(ccVersionsCmd)
+	addSortFlag(ccVersionsCmd)
+	addBodyFormatFlag(ccVersionsCmd)
+	confCustomContentCmd.AddCommand(ccVersionsCmd)
 
 	// custom-content version-details
 	ccVersionDetailCmd := &cobra.Command{

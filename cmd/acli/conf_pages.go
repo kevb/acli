@@ -527,7 +527,8 @@ func init() {
 		Short: "Get account IDs of likes for page",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			data, err := confGet(cmd, "/pages/"+args[0]+"/likes/users", nil)
+			q := getPaginationQuery(cmd)
+			data, err := confGet(cmd, "/pages/"+args[0]+"/likes/users", q)
 			if err != nil {
 				return err
 			}
@@ -535,6 +536,7 @@ func init() {
 			return nil
 		},
 	}
+	addPaginationFlags(pageLikesUsersCmd)
 	confPageCmd.AddCommand(pageLikesUsersCmd)
 
 	// page redact

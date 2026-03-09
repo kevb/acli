@@ -90,33 +90,87 @@ func init() {
 	deleteAttachmentCmd.Flags().Bool("purge", false, "Purge the attachment")
 	confAttachmentCmd.AddCommand(deleteAttachmentCmd)
 
-	// attachment sub-resources
-	for _, sub := range []struct {
-		use, short, path string
-	}{
-		{"labels [attachment-id]", "Get labels for attachment", "/labels"},
-		{"comments [attachment-id]", "Get footer comments for attachment", "/footer-comments"},
-		{"operations [attachment-id]", "Get permitted operations", "/operations"},
-		{"versions [attachment-id]", "Get attachment versions", "/versions"},
-	} {
-		sub := sub
-		subCmd := &cobra.Command{
-			Use:   sub.use,
-			Short: sub.short,
-			Args:  cobra.ExactArgs(1),
-			RunE: func(cmd *cobra.Command, args []string) error {
-				q := getPaginationQuery(cmd)
-				data, err := confGet(cmd, "/attachments/"+args[0]+sub.path, q)
-				if err != nil {
-					return err
-				}
-				printJSON(data)
-				return nil
-			},
-		}
-		addPaginationFlags(subCmd)
-		confAttachmentCmd.AddCommand(subCmd)
+	// attachment labels
+	attLabelsCmd := &cobra.Command{
+		Use:   "labels [attachment-id]",
+		Short: "Get labels for attachment",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			q := getPaginationQuery(cmd)
+			if p := getStringFlag(cmd, "prefix"); p != "" {
+				q.Set("prefix", p)
+			}
+			data, err := confGet(cmd, "/attachments/"+args[0]+"/labels", q)
+			if err != nil {
+				return err
+			}
+			printJSON(data)
+			return nil
+		},
 	}
+	addPaginationFlags(attLabelsCmd)
+	addSortFlag(attLabelsCmd)
+	attLabelsCmd.Flags().String("prefix", "", "Filter by prefix")
+	confAttachmentCmd.AddCommand(attLabelsCmd)
+
+	// attachment comments
+	attCommentsCmd := &cobra.Command{
+		Use:   "comments [attachment-id]",
+		Short: "Get footer comments for attachment",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			q := getPaginationQuery(cmd)
+			if v := getIntFlag(cmd, "version"); v > 0 {
+				q.Set("version", fmt.Sprintf("%d", v))
+			}
+			data, err := confGet(cmd, "/attachments/"+args[0]+"/footer-comments", q)
+			if err != nil {
+				return err
+			}
+			printJSON(data)
+			return nil
+		},
+	}
+	addPaginationFlags(attCommentsCmd)
+	addSortFlag(attCommentsCmd)
+	addBodyFormatFlag(attCommentsCmd)
+	attCommentsCmd.Flags().Int("version", 0, "Filter by version")
+	confAttachmentCmd.AddCommand(attCommentsCmd)
+
+	// attachment operations
+	attOpsCmd := &cobra.Command{
+		Use:   "operations [attachment-id]",
+		Short: "Get permitted operations",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			data, err := confGet(cmd, "/attachments/"+args[0]+"/operations", nil)
+			if err != nil {
+				return err
+			}
+			printJSON(data)
+			return nil
+		},
+	}
+	confAttachmentCmd.AddCommand(attOpsCmd)
+
+	// attachment versions
+	attVersionsCmd := &cobra.Command{
+		Use:   "versions [attachment-id]",
+		Short: "Get attachment versions",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			q := getPaginationQuery(cmd)
+			data, err := confGet(cmd, "/attachments/"+args[0]+"/versions", q)
+			if err != nil {
+				return err
+			}
+			printJSON(data)
+			return nil
+		},
+	}
+	addPaginationFlags(attVersionsCmd)
+	addSortFlag(attVersionsCmd)
+	confAttachmentCmd.AddCommand(attVersionsCmd)
 
 	// attachment version-details
 	attVersionDetailCmd := &cobra.Command{

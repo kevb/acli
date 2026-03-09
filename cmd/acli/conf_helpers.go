@@ -149,3 +149,124 @@ func parseJSONFlag(s string, v interface{}) error {
 	}
 	return nil
 }
+
+// addTreeSubResources adds ancestors, descendants, direct-children, operations, and properties
+// sub-commands to a parent command for tree-like resources (whiteboards, databases, folders, smart links).
+func addTreeSubResources(parentCmd *cobra.Command, pathPrefix, resourceName string) {
+	// ancestors
+	ancestorsCmd := &cobra.Command{
+		Use:   "ancestors [id]",
+		Short: fmt.Sprintf("Get all ancestors of %s", resourceName),
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			q := url.Values{}
+			if limit := getIntFlag(cmd, "limit"); limit > 0 {
+				q.Set("limit", fmt.Sprintf("%d", limit))
+			}
+			data, err := confGet(cmd, pathPrefix+"/"+args[0]+"/ancestors", q)
+			if err != nil {
+				return err
+			}
+			printJSON(data)
+			return nil
+		},
+	}
+	ancestorsCmd.Flags().Int("limit", 25, "Maximum number of results")
+	parentCmd.AddCommand(ancestorsCmd)
+
+	// descendants
+	descendantsCmd := &cobra.Command{
+		Use:   "descendants [id]",
+		Short: fmt.Sprintf("Get descendants of a %s", resourceName),
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			q := url.Values{}
+			if limit := getIntFlag(cmd, "limit"); limit > 0 {
+				q.Set("limit", fmt.Sprintf("%d", limit))
+			}
+			if depth := getIntFlag(cmd, "depth"); depth > 0 {
+				q.Set("depth", fmt.Sprintf("%d", depth))
+			}
+			if cursor := getStringFlag(cmd, "cursor"); cursor != "" {
+				q.Set("cursor", cursor)
+			}
+			data, err := confGet(cmd, pathPrefix+"/"+args[0]+"/descendants", q)
+			if err != nil {
+				return err
+			}
+			printJSON(data)
+			return nil
+		},
+	}
+	descendantsCmd.Flags().Int("limit", 25, "Maximum number of results")
+	descendantsCmd.Flags().Int("depth", 0, "Maximum depth of descendants")
+	descendantsCmd.Flags().String("cursor", "", "Pagination cursor")
+	parentCmd.AddCommand(descendantsCmd)
+
+	// direct-children
+	directChildrenCmd := &cobra.Command{
+		Use:   "direct-children [id]",
+		Short: fmt.Sprintf("Get direct children of a %s", resourceName),
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			q := url.Values{}
+			if cursor := getStringFlag(cmd, "cursor"); cursor != "" {
+				q.Set("cursor", cursor)
+			}
+			if limit := getIntFlag(cmd, "limit"); limit > 0 {
+				q.Set("limit", fmt.Sprintf("%d", limit))
+			}
+			if sort := getStringFlag(cmd, "sort"); sort != "" {
+				q.Set("sort", sort)
+			}
+			data, err := confGet(cmd, pathPrefix+"/"+args[0]+"/direct-children", q)
+			if err != nil {
+				return err
+			}
+			printJSON(data)
+			return nil
+		},
+	}
+	addPaginationFlags(directChildrenCmd)
+	addSortFlag(directChildrenCmd)
+	parentCmd.AddCommand(directChildrenCmd)
+
+	// operations
+	operationsCmd := &cobra.Command{
+		Use:   "operations [id]",
+		Short: fmt.Sprintf("Get permitted operations for %s", resourceName),
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			data, err := confGet(cmd, pathPrefix+"/"+args[0]+"/operations", nil)
+			if err != nil {
+				return err
+			}
+			printJSON(data)
+			return nil
+		},
+	}
+	parentCmd.AddCommand(operationsCmd)
+
+	// properties (list only - CRUD is in conf_properties.go)
+	propertiesCmd := &cobra.Command{
+		Use:   "properties [id]",
+		Short: fmt.Sprintf("Get content properties for %s", resourceName),
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			q := getPaginationQuery(cmd)
+			if k := getStringFlag(cmd, "key"); k != "" {
+				q.Set("key", k)
+			}
+			data, err := confGet(cmd, pathPrefix+"/"+args[0]+"/properties", q)
+			if err != nil {
+				return err
+			}
+			printJSON(data)
+			return nil
+		},
+	}
+	addPaginationFlags(propertiesCmd)
+	addSortFlag(propertiesCmd)
+	propertiesCmd.Flags().String("key", "", "Filter by property key")
+	parentCmd.AddCommand(propertiesCmd)
+}

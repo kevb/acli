@@ -78,32 +78,5 @@ func init() {
 	}
 	confFolderCmd.AddCommand(deleteFolderCmd)
 
-	// folder sub-resources
-	for _, sub := range []struct {
-		use, short, path string
-	}{
-		{"ancestors [id]", "Get all ancestors of folder", "/ancestors"},
-		{"descendants [id]", "Get descendants of folder", "/descendants"},
-		{"direct-children [id]", "Get direct children of a folder", "/direct-children"},
-		{"operations [id]", "Get permitted operations", "/operations"},
-		{"properties [id]", "Get content properties", "/properties"},
-	} {
-		sub := sub
-		subCmd := &cobra.Command{
-			Use:   sub.use,
-			Short: sub.short,
-			Args:  cobra.ExactArgs(1),
-			RunE: func(cmd *cobra.Command, args []string) error {
-				q := getPaginationQuery(cmd)
-				data, err := confGet(cmd, "/folders/"+args[0]+sub.path, q)
-				if err != nil {
-					return err
-				}
-				printJSON(data)
-				return nil
-			},
-		}
-		addPaginationFlags(subCmd)
-		confFolderCmd.AddCommand(subCmd)
-	}
+	addTreeSubResources(confFolderCmd, "/folders", "folder")
 }

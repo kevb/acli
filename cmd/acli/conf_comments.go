@@ -174,6 +174,8 @@ func init() {
 		},
 	}
 	addPaginationFlags(footerChildrenCmd)
+	addSortFlag(footerChildrenCmd)
+	addBodyFormatFlag(footerChildrenCmd)
 	confFooterCommentCmd.AddCommand(footerChildrenCmd)
 
 	// footer operations
@@ -432,6 +434,8 @@ func init() {
 		},
 	}
 	addPaginationFlags(inlineChildrenCmd)
+	addSortFlag(inlineChildrenCmd)
+	addBodyFormatFlag(inlineChildrenCmd)
 	confInlineCommentCmd.AddCommand(inlineChildrenCmd)
 
 	// inline operations

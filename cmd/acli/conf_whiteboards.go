@@ -91,32 +91,5 @@ func init() {
 	}
 	confWhiteboardCmd.AddCommand(deleteWhiteboardCmd)
 
-	// whiteboard sub-resources
-	for _, sub := range []struct {
-		use, short, path string
-	}{
-		{"ancestors [id]", "Get all ancestors of whiteboard", "/ancestors"},
-		{"descendants [id]", "Get descendants of a whiteboard", "/descendants"},
-		{"direct-children [id]", "Get direct children of a whiteboard", "/direct-children"},
-		{"operations [id]", "Get permitted operations", "/operations"},
-		{"properties [id]", "Get content properties", "/properties"},
-	} {
-		sub := sub
-		subCmd := &cobra.Command{
-			Use:   sub.use,
-			Short: sub.short,
-			Args:  cobra.ExactArgs(1),
-			RunE: func(cmd *cobra.Command, args []string) error {
-				q := getPaginationQuery(cmd)
-				data, err := confGet(cmd, "/whiteboards/"+args[0]+sub.path, q)
-				if err != nil {
-					return err
-				}
-				printJSON(data)
-				return nil
-			},
-		}
-		addPaginationFlags(subCmd)
-		confWhiteboardCmd.AddCommand(subCmd)
-	}
+	addTreeSubResources(confWhiteboardCmd, "/whiteboards", "whiteboard")
 }
