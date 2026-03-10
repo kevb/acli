@@ -29,7 +29,7 @@ var jiraDashboardListCmd = &cobra.Command{
 		startAt, _ := cmd.Flags().GetInt("start-at")
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		name, _ := cmd.Flags().GetString("name")
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 
 		if name != "" {
 			result, err := client.SearchDashboards(name, startAt, maxResults)
@@ -37,7 +37,7 @@ var jiraDashboardListCmd = &cobra.Command{
 				return err
 			}
 			if jsonFlag {
-				return printJSON(result)
+				return outputJSON(result)
 			}
 			w := newTabWriter()
 			fmt.Fprintf(w, "ID\tNAME\tOWNER\n")
@@ -57,7 +57,7 @@ var jiraDashboardListCmd = &cobra.Command{
 			return err
 		}
 		if jsonFlag {
-			return printJSON(result)
+			return outputJSON(result)
 		}
 		w := newTabWriter()
 		fmt.Fprintf(w, "ID\tNAME\tOWNER\n")
@@ -86,9 +86,9 @@ var jiraDashboardGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 		if jsonFlag {
-			return printJSON(d)
+			return outputJSON(d)
 		}
 		w := newTabWriter()
 		fmt.Fprintf(w, "ID\t%s\n", d.ID)
@@ -217,9 +217,9 @@ var jiraDashboardGadgetListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 		if jsonFlag {
-			return printJSON(gadgets)
+			return outputJSON(gadgets)
 		}
 		w := newTabWriter()
 		fmt.Fprintln(w, "ID\tTITLE\tMODULE KEY\tURI")

@@ -33,7 +33,7 @@ var jiraIssueListCmd = &cobra.Command{
 		status, _ := cmd.Flags().GetString("status")
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		startAt, _ := cmd.Flags().GetInt("start-at")
-		jsonOutput, _ := cmd.Flags().GetBool("json")
+		jsonOutput := isJSONOutput(cmd)
 
 		if jql == "" {
 			var clauses []string
@@ -60,7 +60,7 @@ var jiraIssueListCmd = &cobra.Command{
 		}
 
 		if jsonOutput {
-			return printJSON(results)
+			return outputJSON(results)
 		}
 
 		w := newTabWriter()
@@ -103,15 +103,13 @@ var jiraIssueGetCmd = &cobra.Command{
 			return err
 		}
 
-		jsonOutput, _ := cmd.Flags().GetBool("json")
-
 		issue, err := client.GetIssue(args[0], nil, nil)
 		if err != nil {
 			return err
 		}
 
-		if jsonOutput {
-			return printJSON(issue)
+		if isJSONOutput(cmd) {
+			return outputJSON(issue)
 		}
 
 		f := issue.Fields
@@ -259,8 +257,7 @@ var jiraIssueCreateCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Created issue: %s\n", created.Key)
-		return nil
+		return outputResult(cmd, "created", created.Key, fmt.Sprintf("Created issue: %s", created.Key), created)
 	},
 }
 
@@ -334,8 +331,7 @@ var jiraIssueEditCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Issue %s updated successfully\n", args[0])
-		return nil
+		return outputResult(cmd, "updated", args[0], fmt.Sprintf("Issue %s updated successfully", args[0]), nil)
 	},
 }
 
@@ -358,8 +354,7 @@ var jiraIssueDeleteCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Issue %s deleted\n", args[0])
-		return nil
+		return outputResult(cmd, "deleted", args[0], fmt.Sprintf("Issue %s deleted", args[0]), nil)
 	},
 }
 
@@ -385,12 +380,11 @@ var jiraIssueAssignCmd = &cobra.Command{
 			return err
 		}
 
-		if accountID == "" {
-			fmt.Fprintf(cmd.OutOrStdout(), "Issue %s unassigned\n", args[0])
-		} else {
-			fmt.Fprintf(cmd.OutOrStdout(), "Issue %s assigned to %s\n", args[0], args[1])
+		msg := fmt.Sprintf("Issue %s unassigned", args[0])
+		if accountID != "" {
+			msg = fmt.Sprintf("Issue %s assigned to %s", args[0], args[1])
 		}
-		return nil
+		return outputResult(cmd, "assigned", args[0], msg, nil)
 	},
 }
 
@@ -419,8 +413,7 @@ var jiraIssueTransitionCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Issue %s transitioned successfully\n", args[0])
-		return nil
+		return outputResult(cmd, "transitioned", args[0], fmt.Sprintf("Issue %s transitioned successfully", args[0]), nil)
 	},
 }
 
@@ -439,6 +432,10 @@ var jiraIssueTransitionsCmd = &cobra.Command{
 		resp, err := client.GetIssueTransitions(args[0])
 		if err != nil {
 			return err
+		}
+
+		if isJSONOutput(cmd) {
+			return outputJSON(resp)
 		}
 
 		w := newTabWriter()
@@ -478,15 +475,14 @@ var jiraIssueCommentListCmd = &cobra.Command{
 
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		startAt, _ := cmd.Flags().GetInt("start-at")
-		jsonOutput, _ := cmd.Flags().GetBool("json")
 
 		page, err := client.GetIssueComments(args[0], startAt, maxResults)
 		if err != nil {
 			return err
 		}
 
-		if jsonOutput {
-			return printJSON(page)
+		if isJSONOutput(cmd) {
+			return outputJSON(page)
 		}
 
 		w := newTabWriter()
@@ -585,8 +581,7 @@ var jiraIssueCommentAddCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Comment %s added to %s\n", comment.ID, args[0])
-		return nil
+		return outputResult(cmd, "created", comment.ID, fmt.Sprintf("Comment %s added to %s", comment.ID, args[0]), comment)
 	},
 }
 
@@ -607,7 +602,7 @@ var jiraIssueCommentGetCmd = &cobra.Command{
 			return err
 		}
 
-		return printJSON(comment)
+		return outputJSON(comment)
 	},
 }
 
@@ -628,8 +623,7 @@ var jiraIssueCommentDeleteCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Comment %s deleted from %s\n", args[1], args[0])
-		return nil
+		return outputResult(cmd, "deleted", args[1], fmt.Sprintf("Comment %s deleted from %s", args[1], args[0]), nil)
 	},
 }
 
@@ -660,6 +654,10 @@ var jiraIssueWorklogListCmd = &cobra.Command{
 		page, err := client.GetIssueWorklogs(args[0], startAt, maxResults)
 		if err != nil {
 			return err
+		}
+
+		if isJSONOutput(cmd) {
+			return outputJSON(page)
 		}
 
 		w := newTabWriter()
@@ -703,8 +701,7 @@ var jiraIssueWorklogAddCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Worklog %s added to %s\n", result.ID, args[0])
-		return nil
+		return outputResult(cmd, "created", result.ID, fmt.Sprintf("Worklog %s added to %s", result.ID, args[0]), result)
 	},
 }
 
@@ -725,8 +722,7 @@ var jiraIssueWorklogDeleteCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Worklog %s deleted from %s\n", args[1], args[0])
-		return nil
+		return outputResult(cmd, "deleted", args[1], fmt.Sprintf("Worklog %s deleted from %s", args[1], args[0]), nil)
 	},
 }
 
@@ -747,6 +743,9 @@ var jiraIssueAttachCmd = &cobra.Command{
 			return err
 		}
 
+		if isJSONOutput(cmd) {
+			return outputJSON(attachments)
+		}
 		for _, a := range attachments {
 			fmt.Fprintf(cmd.OutOrStdout(), "Attached: %s (id: %s)\n", a.Filename, a.ID)
 		}
@@ -771,8 +770,7 @@ var jiraIssueVoteCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Vote added to %s\n", args[0])
-		return nil
+		return outputResult(cmd, "voted", args[0], fmt.Sprintf("Vote added to %s", args[0]), nil)
 	},
 }
 
@@ -793,8 +791,7 @@ var jiraIssueUnvoteCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Vote removed from %s\n", args[0])
-		return nil
+		return outputResult(cmd, "unvoted", args[0], fmt.Sprintf("Vote removed from %s", args[0]), nil)
 	},
 }
 
@@ -817,12 +814,11 @@ var jiraIssueWatchCmd = &cobra.Command{
 			return err
 		}
 
-		if accountID == "" {
-			fmt.Fprintf(cmd.OutOrStdout(), "You are now watching %s\n", args[0])
-		} else {
-			fmt.Fprintf(cmd.OutOrStdout(), "Watcher %s added to %s\n", accountID, args[0])
+		msg := fmt.Sprintf("You are now watching %s", args[0])
+		if accountID != "" {
+			msg = fmt.Sprintf("Watcher %s added to %s", accountID, args[0])
 		}
-		return nil
+		return outputResult(cmd, "watch_added", args[0], msg, nil)
 	},
 }
 
@@ -845,8 +841,7 @@ var jiraIssueUnwatchCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Watcher %s removed from %s\n", accountID, args[0])
-		return nil
+		return outputResult(cmd, "watch_removed", args[0], fmt.Sprintf("Watcher %s removed from %s", accountID, args[0]), nil)
 	},
 }
 
@@ -865,6 +860,10 @@ var jiraIssueWatchersCmd = &cobra.Command{
 		watches, err := client.GetIssueWatchers(args[0])
 		if err != nil {
 			return err
+		}
+
+		if isJSONOutput(cmd) {
+			return outputJSON(watches)
 		}
 
 		w := newTabWriter()
@@ -896,6 +895,10 @@ var jiraIssueChangelogCmd = &cobra.Command{
 		page, err := client.GetIssueChangelog(args[0], startAt, maxResults)
 		if err != nil {
 			return err
+		}
+
+		if isJSONOutput(cmd) {
+			return outputJSON(page)
 		}
 
 		// The changelog API may return values in "Values" or "Histories"
@@ -947,6 +950,10 @@ var jiraIssueRemoteLinkListCmd = &cobra.Command{
 			return err
 		}
 
+		if isJSONOutput(cmd) {
+			return outputJSON(links)
+		}
+
 		w := newTabWriter()
 		fmt.Fprintf(w, "ID\tTITLE\tURL\n")
 		for _, link := range links {
@@ -990,8 +997,7 @@ var jiraIssueRemoteLinkCreateCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Remote link %d created on %s\n", created.ID, args[0])
-		return nil
+		return outputResult(cmd, "created", fmt.Sprintf("%d", created.ID), fmt.Sprintf("Remote link %d created on %s", created.ID, args[0]), created)
 	},
 }
 
@@ -1012,8 +1018,7 @@ var jiraIssueRemoteLinkDeleteCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Remote link %s deleted from %s\n", args[1], args[0])
-		return nil
+		return outputResult(cmd, "deleted", args[1], fmt.Sprintf("Remote link %s deleted from %s", args[1], args[0]), nil)
 	},
 }
 
@@ -1042,8 +1047,7 @@ var jiraIssueNotifyCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Notification sent for %s\n", args[0])
-		return nil
+		return outputResult(cmd, "notified", args[0], fmt.Sprintf("Notification sent for %s", args[0]), nil)
 	},
 }
 
@@ -1065,7 +1069,7 @@ var jiraIssueCreateMetaCmd = &cobra.Command{
 			return err
 		}
 
-		return printJSON(meta)
+		return outputJSON(meta)
 	},
 }
 
@@ -1086,7 +1090,7 @@ var jiraIssueEditMetaCmd = &cobra.Command{
 			return err
 		}
 
-		return printJSON(meta)
+		return outputJSON(meta)
 	},
 }
 

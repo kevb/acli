@@ -23,15 +23,14 @@ var jiraSearchCmd = &cobra.Command{
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		startAt, _ := cmd.Flags().GetInt("start-at")
 		fields, _ := cmd.Flags().GetStringSlice("fields")
-		jsonOut, _ := cmd.Flags().GetBool("json")
 
 		results, err := client.SearchJQL(jql, startAt, maxResults, fields, nil)
 		if err != nil {
 			return err
 		}
 
-		if jsonOut {
-			return printJSON(results)
+		if isJSONOutput(cmd) {
+			return outputJSON(results)
 		}
 
 		w := newTabWriter()
@@ -89,6 +88,10 @@ var jiraFilterListCmd = &cobra.Command{
 			filters = page.Values
 		}
 
+		if isJSONOutput(cmd) {
+			return outputJSON(filters)
+		}
+
 		w := newTabWriter()
 		fmt.Fprintln(w, "ID\tNAME\tOWNER\tJQL")
 		for _, f := range filters {
@@ -113,15 +116,13 @@ var jiraFilterGetCmd = &cobra.Command{
 			return err
 		}
 
-		jsonOut, _ := cmd.Flags().GetBool("json")
-
 		filter, err := client.GetFilter(args[0])
 		if err != nil {
 			return err
 		}
 
-		if jsonOut {
-			return printJSON(filter)
+		if isJSONOutput(cmd) {
+			return outputJSON(filter)
 		}
 
 		fmt.Printf("ID:          %s\n", filter.ID)
@@ -163,8 +164,7 @@ var jiraFilterCreateCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Filter created: %s (ID: %s)\n", created.Name, created.ID)
-		return nil
+		return outputResult(cmd, "created", created.ID, fmt.Sprintf("Filter created: %s (ID: %s)", created.Name, created.ID), created)
 	},
 }
 
@@ -197,8 +197,7 @@ var jiraFilterUpdateCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Filter updated: %s (ID: %s)\n", updated.Name, updated.ID)
-		return nil
+		return outputResult(cmd, "updated", updated.ID, fmt.Sprintf("Filter updated: %s (ID: %s)", updated.Name, updated.ID), updated)
 	},
 }
 
@@ -216,8 +215,7 @@ var jiraFilterDeleteCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Filter %s deleted\n", args[0])
-		return nil
+		return outputResult(cmd, "deleted", args[0], fmt.Sprintf("Filter %s deleted", args[0]), nil)
 	},
 }
 

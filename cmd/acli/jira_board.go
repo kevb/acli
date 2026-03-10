@@ -28,14 +28,14 @@ var jiraBoardListCmd = &cobra.Command{
 		project, _ := defaultProject(cmd)
 		boardType, _ := cmd.Flags().GetString("type")
 		name, _ := cmd.Flags().GetString("name")
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 
 		result, err := client.GetBoards(startAt, maxResults, project, boardType, name)
 		if err != nil {
 			return err
 		}
 		if jsonFlag {
-			return printJSON(result)
+			return outputJSON(result)
 		}
 		w := newTabWriter()
 		fmt.Fprintln(w, "ID\tNAME\tTYPE\tPROJECT")
@@ -63,14 +63,14 @@ var jiraBoardGetCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("invalid board ID: %w", err)
 		}
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 
 		board, err := client.GetBoard(id)
 		if err != nil {
 			return err
 		}
 		if jsonFlag {
-			return printJSON(board)
+			return outputJSON(board)
 		}
 		fmt.Printf("ID:      %d\n", board.ID)
 		fmt.Printf("Name:    %s\n", board.Name)
@@ -100,7 +100,7 @@ var jiraBoardConfigCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(config)
+		return outputJSON(config)
 	},
 }
 
@@ -120,14 +120,14 @@ var jiraBoardIssuesCmd = &cobra.Command{
 		startAt, _ := cmd.Flags().GetInt("start-at")
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		jql, _ := cmd.Flags().GetString("jql")
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 
 		result, err := client.GetBoardIssues(id, startAt, maxResults, jql)
 		if err != nil {
 			return err
 		}
 		if jsonFlag {
-			return printJSON(result)
+			return outputJSON(result)
 		}
 		w := newTabWriter()
 		fmt.Fprintln(w, "KEY\tTYPE\tSTATUS\tPRIORITY\tASSIGNEE\tSUMMARY")
@@ -154,14 +154,14 @@ var jiraBoardBacklogCmd = &cobra.Command{
 		startAt, _ := cmd.Flags().GetInt("start-at")
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		jql, _ := cmd.Flags().GetString("jql")
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 
 		result, err := client.GetBoardBacklog(id, startAt, maxResults, jql)
 		if err != nil {
 			return err
 		}
 		if jsonFlag {
-			return printJSON(result)
+			return outputJSON(result)
 		}
 		w := newTabWriter()
 		fmt.Fprintln(w, "KEY\tTYPE\tSTATUS\tPRIORITY\tASSIGNEE\tSUMMARY")
@@ -188,14 +188,14 @@ var jiraBoardSprintsCmd = &cobra.Command{
 		startAt, _ := cmd.Flags().GetInt("start-at")
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		state, _ := cmd.Flags().GetString("state")
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 
 		result, err := client.GetBoardSprints(id, startAt, maxResults, state)
 		if err != nil {
 			return err
 		}
 		if jsonFlag {
-			return printJSON(result)
+			return outputJSON(result)
 		}
 		w := newTabWriter()
 		fmt.Fprintln(w, "ID\tNAME\tSTATE\tSTART DATE\tEND DATE")
@@ -221,14 +221,14 @@ var jiraBoardEpicsCmd = &cobra.Command{
 		}
 		startAt, _ := cmd.Flags().GetInt("start-at")
 		maxResults, _ := cmd.Flags().GetInt("max-results")
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 
 		result, err := client.GetBoardEpics(id, startAt, maxResults)
 		if err != nil {
 			return err
 		}
 		if jsonFlag {
-			return printJSON(result)
+			return outputJSON(result)
 		}
 		w := newTabWriter()
 		fmt.Fprintln(w, "ID\tKEY\tNAME\tDONE\tSUMMARY")

@@ -41,6 +41,10 @@ func init() {
 				return err
 			}
 
+			if isJSONOutput(cmd) {
+				return outputJSON(prs)
+			}
+
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 			fmt.Fprintln(w, "ID\tTITLE\tSTATE\tAUTHOR\tSOURCE\tDESTINATION")
 			for _, pr := range prs {
@@ -78,6 +82,10 @@ func init() {
 			pr, err := client.GetPullRequest(workspace, repoSlug, prID)
 			if err != nil {
 				return err
+			}
+
+			if isJSONOutput(cmd) {
+				return outputJSON(pr)
 			}
 
 			fmt.Printf("ID:           %d\n", pr.ID)
@@ -134,9 +142,7 @@ func init() {
 				return err
 			}
 
-			fmt.Printf("Created PR #%d: %s\n", pr.ID, pr.Title)
-			fmt.Printf("URL: %s\n", pr.Links.HTML.Href)
-			return nil
+			return outputResult(cmd, "created", fmt.Sprintf("%d", pr.ID), fmt.Sprintf("Created PR #%d: %s", pr.ID, pr.Title), pr)
 		},
 	}
 	prCreateCmd.Flags().String("title", "", "Pull request title (required)")
@@ -167,8 +173,7 @@ func init() {
 			if err := client.ApprovePullRequest(workspace, repoSlug, prID); err != nil {
 				return err
 			}
-			fmt.Printf("Approved PR #%d\n", prID)
-			return nil
+			return outputResult(cmd, "approved", fmt.Sprintf("%d", prID), fmt.Sprintf("Approved PR #%d", prID), nil)
 		},
 	})
 
@@ -193,8 +198,7 @@ func init() {
 			if err := client.UnapprovePullRequest(workspace, repoSlug, prID); err != nil {
 				return err
 			}
-			fmt.Printf("Removed approval from PR #%d\n", prID)
-			return nil
+			return outputResult(cmd, "unapproved", fmt.Sprintf("%d", prID), fmt.Sprintf("Removed approval from PR #%d", prID), nil)
 		},
 	})
 
@@ -219,8 +223,7 @@ func init() {
 			if err := client.DeclinePullRequest(workspace, repoSlug, prID); err != nil {
 				return err
 			}
-			fmt.Printf("Declined PR #%d\n", prID)
-			return nil
+			return outputResult(cmd, "declined", fmt.Sprintf("%d", prID), fmt.Sprintf("Declined PR #%d", prID), nil)
 		},
 	})
 
@@ -259,8 +262,7 @@ func init() {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("Merged PR #%d: %s\n", pr.ID, pr.Title)
-			return nil
+			return outputResult(cmd, "merged", fmt.Sprintf("%d", pr.ID), fmt.Sprintf("Merged PR #%d: %s", pr.ID, pr.Title), pr)
 		},
 	}
 	prMergeCmd.Flags().String("strategy", "", "Merge strategy (merge_commit, squash, fast_forward)")
@@ -289,8 +291,7 @@ func init() {
 			if err := client.RequestChangesPullRequest(workspace, repoSlug, prID); err != nil {
 				return err
 			}
-			fmt.Printf("Requested changes on PR #%d\n", prID)
-			return nil
+			return outputResult(cmd, "changes_requested", fmt.Sprintf("%d", prID), fmt.Sprintf("Requested changes on PR #%d", prID), nil)
 		},
 	})
 
@@ -316,6 +317,10 @@ func init() {
 			comments, err := client.ListPRComments(workspace, repoSlug, prID)
 			if err != nil {
 				return err
+			}
+
+			if isJSONOutput(cmd) {
+				return outputJSON(comments)
 			}
 
 			for _, c := range comments {
@@ -357,8 +362,7 @@ func init() {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("Added comment #%d to PR #%d\n", comment.ID, prID)
-			return nil
+			return outputResult(cmd, "created", fmt.Sprintf("%d", comment.ID), fmt.Sprintf("Added comment #%d to PR #%d", comment.ID, prID), comment)
 		},
 	}
 	prCommentCmd.Flags().String("body", "", "Comment body (required)")
