@@ -45,6 +45,10 @@ func init() {
 				return err
 			}
 
+			if isJSONOutput(cmd) {
+				return outputJSON(repos)
+			}
+
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 			fmt.Fprintln(w, "NAME\tSLUG\tLANGUAGE\tPRIVATE\tUPDATED")
 			for _, r := range repos {
@@ -77,6 +81,10 @@ func init() {
 			repo, err := client.GetRepository(workspace, repoSlug)
 			if err != nil {
 				return err
+			}
+
+			if isJSONOutput(cmd) {
+				return outputJSON(repo)
 			}
 
 			mainBranch := "N/A"
@@ -140,9 +148,7 @@ func init() {
 				return err
 			}
 
-			fmt.Printf("Created repository: %s\n", repo.FullName)
-			fmt.Printf("URL: %s\n", repo.Links.HTML.Href)
-			return nil
+			return outputResult(cmd, "created", repo.FullName, fmt.Sprintf("Created repository: %s", repo.FullName), repo)
 		},
 	}
 	repoCreateCmd.Flags().String("name", "", "Repository name (required)")
@@ -169,8 +175,7 @@ func init() {
 			if err := client.DeleteRepository(workspace, repoSlug); err != nil {
 				return err
 			}
-			fmt.Printf("Deleted repository: %s/%s\n", workspace, repoSlug)
-			return nil
+			return outputResult(cmd, "deleted", workspace+"/"+repoSlug, fmt.Sprintf("Deleted repository: %s/%s", workspace, repoSlug), nil)
 		},
 	})
 
@@ -206,9 +211,7 @@ func init() {
 				return err
 			}
 
-			fmt.Printf("Forked repository: %s\n", repo.FullName)
-			fmt.Printf("URL: %s\n", repo.Links.HTML.Href)
-			return nil
+			return outputResult(cmd, "forked", repo.FullName, fmt.Sprintf("Forked repository: %s", repo.FullName), repo)
 		},
 	}
 	repoForkCmd.Flags().String("name", "", "Name for the forked repo")
@@ -233,6 +236,10 @@ func init() {
 			forks, err := client.ListForks(workspace, repoSlug)
 			if err != nil {
 				return err
+			}
+
+			if isJSONOutput(cmd) {
+				return outputJSON(forks)
 			}
 
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)

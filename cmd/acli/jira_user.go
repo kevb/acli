@@ -35,13 +35,13 @@ var jiraUserGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		jsonOut, _ := cmd.Flags().GetBool("json")
+		jsonOut := isJSONOutput(cmd)
 		user, err := client.GetUser(args[0])
 		if err != nil {
 			return err
 		}
 		if jsonOut {
-			return printJSON(user)
+			return outputJSON(user)
 		}
 		fmt.Printf("Account ID:   %s\n", user.AccountID)
 		fmt.Printf("Display Name: %s\n", user.DisplayName)
@@ -64,14 +64,14 @@ var jiraUserSearchCmd = &cobra.Command{
 		query, _ := cmd.Flags().GetString("query")
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		startAt, _ := cmd.Flags().GetInt("start-at")
-		jsonOut, _ := cmd.Flags().GetBool("json")
+		jsonOut := isJSONOutput(cmd)
 
 		users, err := client.FindUsers(query, startAt, maxResults)
 		if err != nil {
 			return err
 		}
 		if jsonOut {
-			return printJSON(users)
+			return outputJSON(users)
 		}
 		printUsersTable(users)
 		return nil
@@ -203,14 +203,14 @@ var jiraGroupListCmd = &cobra.Command{
 		}
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		startAt, _ := cmd.Flags().GetInt("start-at")
-		jsonOut, _ := cmd.Flags().GetBool("json")
+		jsonOut := isJSONOutput(cmd)
 
 		page, err := client.GetBulkGroups(startAt, maxResults)
 		if err != nil {
 			return err
 		}
 		if jsonOut {
-			return printJSON(page)
+			return outputJSON(page)
 		}
 		w := newTabWriter()
 		fmt.Fprintln(w, "GROUP_ID\tNAME")
@@ -231,13 +231,13 @@ var jiraGroupGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		jsonOut, _ := cmd.Flags().GetBool("json")
+		jsonOut := isJSONOutput(cmd)
 		group, err := client.GetGroup(args[0])
 		if err != nil {
 			return err
 		}
 		if jsonOut {
-			return printJSON(group)
+			return outputJSON(group)
 		}
 		fmt.Printf("Group ID: %s\n", group.GroupID)
 		fmt.Printf("Name:     %s\n", group.Name)

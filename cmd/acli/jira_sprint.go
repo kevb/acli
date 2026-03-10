@@ -28,14 +28,14 @@ var jiraSprintGetCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("invalid sprint ID: %w", err)
 		}
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 
 		sprint, err := client.GetSprint(id)
 		if err != nil {
 			return err
 		}
 		if jsonFlag {
-			return printJSON(sprint)
+			return outputJSON(sprint)
 		}
 		fmt.Printf("ID:         %d\n", sprint.ID)
 		fmt.Printf("Name:       %s\n", sprint.Name)
@@ -169,14 +169,14 @@ var jiraSprintIssuesCmd = &cobra.Command{
 		startAt, _ := cmd.Flags().GetInt("start-at")
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		jql, _ := cmd.Flags().GetString("jql")
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 
 		result, err := client.GetSprintIssues(id, startAt, maxResults, jql)
 		if err != nil {
 			return err
 		}
 		if jsonFlag {
-			return printJSON(result)
+			return outputJSON(result)
 		}
 		w := newTabWriter()
 		fmt.Fprintln(w, "KEY\tTYPE\tSTATUS\tPRIORITY\tASSIGNEE\tSUMMARY")
@@ -231,9 +231,9 @@ var jiraEpicGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 		if jsonFlag {
-			return printJSON(epic)
+			return outputJSON(epic)
 		}
 		fmt.Printf("ID:      %d\n", epic.ID)
 		fmt.Printf("Key:     %s\n", epic.Key)
@@ -256,14 +256,14 @@ var jiraEpicIssuesCmd = &cobra.Command{
 		startAt, _ := cmd.Flags().GetInt("start-at")
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		jql, _ := cmd.Flags().GetString("jql")
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 
 		result, err := client.GetEpicIssues(args[0], startAt, maxResults, jql)
 		if err != nil {
 			return err
 		}
 		if jsonFlag {
-			return printJSON(result)
+			return outputJSON(result)
 		}
 		w := newTabWriter()
 		fmt.Fprintln(w, "KEY\tTYPE\tSTATUS\tPRIORITY\tASSIGNEE\tSUMMARY")

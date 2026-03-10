@@ -25,7 +25,7 @@ func init() {
 				return err
 			}
 
-			jsonOutput, _ := cmd.Flags().GetBool("json")
+			jsonOutput := isJSONOutput(cmd)
 			query, _ := cmd.Flags().GetString("query")
 			maxResults, _ := cmd.Flags().GetInt("max-results")
 			startAt, _ := cmd.Flags().GetInt("start-at")
@@ -36,7 +36,7 @@ func init() {
 			}
 
 			if jsonOutput {
-				return printJSON(result)
+				return outputJSON(result)
 			}
 
 			w := newTabWriter()
@@ -68,7 +68,7 @@ func init() {
 				return err
 			}
 
-			jsonOutput, _ := cmd.Flags().GetBool("json")
+			jsonOutput := isJSONOutput(cmd)
 
 			project, err := client.GetProject(args[0], "")
 			if err != nil {
@@ -76,7 +76,7 @@ func init() {
 			}
 
 			if jsonOutput {
-				return printJSON(project)
+				return outputJSON(project)
 			}
 
 			lead := "N/A"
@@ -138,8 +138,7 @@ func init() {
 				return err
 			}
 
-			fmt.Printf("Created project %s (ID: %s)\n", project.Key, project.ID)
-			return nil
+			return outputResult(cmd, "created", project.Key, fmt.Sprintf("Created project %s (ID: %s)", project.Key, project.ID), project)
 		},
 	}
 	projectCreateCmd.Flags().String("key", "", "Project key (required)")
@@ -185,8 +184,7 @@ func init() {
 				return err
 			}
 
-			fmt.Printf("Updated project %s\n", project.Key)
-			return nil
+			return outputResult(cmd, "updated", project.Key, fmt.Sprintf("Updated project %s", project.Key), project)
 		},
 	}
 	projectUpdateCmd.Flags().String("name", "", "Project name")
@@ -207,8 +205,7 @@ func init() {
 			if err = client.DeleteProject(args[0]); err != nil {
 				return err
 			}
-			fmt.Printf("Deleted project %s\n", args[0])
-			return nil
+			return outputResult(cmd, "deleted", args[0], fmt.Sprintf("Deleted project %s", args[0]), nil)
 		},
 	})
 
@@ -329,8 +326,7 @@ func init() {
 			if err = client.ArchiveProject(args[0]); err != nil {
 				return err
 			}
-			fmt.Printf("Archived project %s\n", args[0])
-			return nil
+			return outputResult(cmd, "archived", args[0], fmt.Sprintf("Archived project %s", args[0]), nil)
 		},
 	})
 
@@ -347,8 +343,7 @@ func init() {
 			if err = client.RestoreProject(args[0]); err != nil {
 				return err
 			}
-			fmt.Printf("Restored project %s\n", args[0])
-			return nil
+			return outputResult(cmd, "restored", args[0], fmt.Sprintf("Restored project %s", args[0]), nil)
 		},
 	})
 

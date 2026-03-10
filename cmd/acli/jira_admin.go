@@ -58,7 +58,7 @@ var jiraRoleGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(role)
+		return outputJSON(role)
 	},
 }
 
@@ -82,7 +82,7 @@ var jiraRoleCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(role)
+		return outputJSON(role)
 	},
 }
 
@@ -155,7 +155,7 @@ var jiraIssueLinkGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(link)
+		return outputJSON(link)
 	},
 }
 
@@ -222,7 +222,7 @@ var jiraIssueLinkTypeGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(lt)
+		return outputJSON(lt)
 	},
 }
 
@@ -245,7 +245,7 @@ var jiraIssueLinkTypeCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(lt)
+		return outputJSON(lt)
 	},
 }
 
@@ -272,7 +272,7 @@ var jiraIssueLinkTypeUpdateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return outputJSON(result)
 	},
 }
 
@@ -347,7 +347,7 @@ var jiraScreenCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(screen)
+		return outputJSON(screen)
 	},
 }
 
@@ -513,7 +513,7 @@ var jiraWorkflowSchemeGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(scheme)
+		return outputJSON(scheme)
 	},
 }
 
@@ -537,7 +537,7 @@ var jiraWorkflowSchemeCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(scheme)
+		return outputJSON(scheme)
 	},
 }
 
@@ -565,7 +565,7 @@ var jiraWorkflowSchemeUpdateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(scheme)
+		return outputJSON(scheme)
 	},
 }
 
@@ -640,7 +640,7 @@ var jiraPermissionSchemeGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(scheme)
+		return outputJSON(scheme)
 	},
 }
 
@@ -664,7 +664,7 @@ var jiraPermissionSchemeCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(scheme)
+		return outputJSON(scheme)
 	},
 }
 
@@ -741,7 +741,7 @@ var jiraNotificationSchemeGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(scheme)
+		return outputJSON(scheme)
 	},
 }
 
@@ -765,7 +765,7 @@ var jiraNotificationSchemeCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(scheme)
+		return outputJSON(scheme)
 	},
 }
 
@@ -840,7 +840,7 @@ var jiraIssueSecuritySchemeGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(scheme)
+		return outputJSON(scheme)
 	},
 }
 
@@ -864,7 +864,7 @@ var jiraIssueSecuritySchemeCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(scheme)
+		return outputJSON(scheme)
 	},
 }
 
@@ -944,7 +944,7 @@ var jiraFieldConfigCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(fc)
+		return outputJSON(fc)
 	},
 }
 
@@ -1024,7 +1024,7 @@ var jiraIssueTypeSchemeCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(scheme)
+		return outputJSON(scheme)
 	},
 }
 
@@ -1062,7 +1062,7 @@ var jiraServerInfoCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(info)
+		return outputJSON(info)
 	},
 }
 
@@ -1126,9 +1126,9 @@ var jiraAttachmentGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 		if jsonFlag {
-			return printJSON(att)
+			return outputJSON(att)
 		}
 		w := newTabWriter()
 		fmt.Fprintln(w, "ID\tFILENAME\tSIZE\tMIME TYPE\tCREATED")
@@ -1166,7 +1166,7 @@ var jiraAttachmentMetaCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(meta)
+		return outputJSON(meta)
 	},
 }
 
@@ -1219,7 +1219,7 @@ var jiraBannerGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(banner)
+		return outputJSON(banner)
 	},
 }
 
@@ -1266,7 +1266,7 @@ var jiraConfigurationCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(config)
+		return outputJSON(config)
 	},
 }
 
@@ -1348,7 +1348,7 @@ var jiraTaskGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(task)
+		return outputJSON(task)
 	},
 }
 
@@ -1415,7 +1415,7 @@ var jiraProjectCategoryGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(cat)
+		return outputJSON(cat)
 	},
 }
 
@@ -1439,7 +1439,7 @@ var jiraProjectCategoryCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return outputJSON(result)
 	},
 }
 
@@ -1463,7 +1463,7 @@ var jiraProjectCategoryUpdateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(result)
+		return outputJSON(result)
 	},
 }
 

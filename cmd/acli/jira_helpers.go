@@ -1,7 +1,6 @@
 package acli
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"text/tabwriter"
@@ -96,15 +95,6 @@ func resolveWorkspaceRepoAndID(cmd *cobra.Command, args []string) (string, strin
 
 func newTabWriter() *tabwriter.Writer {
 	return tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-}
-
-func printJSON(v interface{}) error {
-	data, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		return err
-	}
-	fmt.Println(string(data))
-	return nil
 }
 
 // truncate truncates a string to maxLen characters, appending "..." if truncated.

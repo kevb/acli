@@ -31,9 +31,9 @@ var jiraComponentGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 		if jsonFlag {
-			return printJSON(comp)
+			return outputJSON(comp)
 		}
 		w := newTabWriter()
 		fmt.Fprintf(w, "ID\t%s\n", comp.ID)
@@ -150,9 +150,9 @@ var jiraVersionGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 		if jsonFlag {
-			return printJSON(ver)
+			return outputJSON(ver)
 		}
 		w := newTabWriter()
 		fmt.Fprintf(w, "ID\t%s\n", ver.ID)
@@ -290,7 +290,7 @@ var jiraFieldListCmd = &cobra.Command{
 			return err
 		}
 		customOnly, _ := cmd.Flags().GetBool("custom")
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 		if customOnly {
 			var filtered []interface{}
 			for i := range fields {
@@ -299,10 +299,10 @@ var jiraFieldListCmd = &cobra.Command{
 				}
 			}
 			if jsonFlag {
-				return printJSON(filtered)
+				return outputJSON(filtered)
 			}
 		} else if jsonFlag {
-			return printJSON(fields)
+			return outputJSON(fields)
 		}
 		w := newTabWriter()
 		fmt.Fprintf(w, "ID\tNAME\tTYPE\tCUSTOM\n")
@@ -419,9 +419,9 @@ var jiraLabelCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 		if jsonFlag {
-			return printJSON(result)
+			return outputJSON(result)
 		}
 		w := newTabWriter()
 		fmt.Fprintf(w, "LABEL\n")
@@ -480,9 +480,9 @@ var jiraIssuetypeGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 		if jsonFlag {
-			return printJSON(it)
+			return outputJSON(it)
 		}
 		w := newTabWriter()
 		fmt.Fprintf(w, "ID\t%s\n", it.ID)
@@ -609,9 +609,9 @@ var jiraPriorityGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 		if jsonFlag {
-			return printJSON(p)
+			return outputJSON(p)
 		}
 		w := newTabWriter()
 		fmt.Fprintf(w, "ID\t%s\n", p.ID)
@@ -738,9 +738,9 @@ var jiraResolutionGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 		if jsonFlag {
-			return printJSON(r)
+			return outputJSON(r)
 		}
 		w := newTabWriter()
 		fmt.Fprintf(w, "ID\t%s\n", r.ID)
@@ -864,9 +864,9 @@ var jiraStatusGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jsonFlag := isJSONOutput(cmd)
 		if jsonFlag {
-			return printJSON(s)
+			return outputJSON(s)
 		}
 		w := newTabWriter()
 		fmt.Fprintf(w, "ID\t%s\n", s.ID)
