@@ -23,10 +23,24 @@ var jiraSearchCmd = &cobra.Command{
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		startAt, _ := cmd.Flags().GetInt("start-at")
 		fields, _ := cmd.Flags().GetStringSlice("fields")
+		all, _ := cmd.Flags().GetBool("all")
 
 		results, err := client.SearchJQL(jql, startAt, maxResults, fields, nil)
 		if err != nil {
 			return err
+		}
+
+		if all {
+			for len(results.Issues) < results.Total {
+				next, err := client.SearchJQL(jql, startAt+len(results.Issues), maxResults, fields, nil)
+				if err != nil {
+					return err
+				}
+				if len(next.Issues) == 0 {
+					break
+				}
+				results.Issues = append(results.Issues, next.Issues...)
+			}
 		}
 
 		if isJSONOutput(cmd) {
@@ -39,6 +53,7 @@ var jiraSearchCmd = &cobra.Command{
 			printIssueRow(w, issue)
 		}
 		w.Flush()
+		printPaginationHint(cmd, len(results.Issues), results.Total)
 		return nil
 	},
 }
@@ -64,19 +79,23 @@ var jiraFilterListCmd = &cobra.Command{
 
 		favourites, _ := cmd.Flags().GetBool("favourites")
 		mine, _ := cmd.Flags().GetBool("mine")
+		all, _ := cmd.Flags().GetBool("all")
 
 		var filters []jira.Filter
+		total := 0
 
 		if favourites {
 			filters, err = client.GetFavouriteFilters()
 			if err != nil {
 				return err
 			}
+			total = len(filters)
 		} else if mine {
 			filters, err = client.GetMyFilters()
 			if err != nil {
 				return err
 			}
+			total = len(filters)
 		} else {
 			name, _ := cmd.Flags().GetString("name")
 			maxResults, _ := cmd.Flags().GetInt("max-results")
@@ -86,6 +105,20 @@ var jiraFilterListCmd = &cobra.Command{
 				return err
 			}
 			filters = page.Values
+			total = page.Total
+			if all {
+				for !page.IsLast && len(filters) < page.Total {
+					next, err := client.SearchFilters(name, startAt+len(filters), maxResults)
+					if err != nil {
+						return err
+					}
+					if len(next.Values) == 0 {
+						break
+					}
+					filters = append(filters, next.Values...)
+					page.IsLast = next.IsLast
+				}
+			}
 		}
 
 		if isJSONOutput(cmd) {
@@ -102,6 +135,7 @@ var jiraFilterListCmd = &cobra.Command{
 			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", f.ID, f.Name, owner, truncate(f.JQL, 60))
 		}
 		w.Flush()
+		printPaginationHint(cmd, len(filters), total)
 		return nil
 	},
 }
@@ -223,17 +257,19 @@ func init() {
 	// Search
 	jiraSearchCmd.Flags().String("jql", "", "JQL query (required)")
 	_ = jiraSearchCmd.MarkFlagRequired("jql")
-	jiraSearchCmd.Flags().Int("max-results", 50, "Maximum number of results")
+	jiraSearchCmd.Flags().Int("max-results", 50, "Maximum number of results per page")
 	jiraSearchCmd.Flags().Int("start-at", 0, "Index of the first result")
 	jiraSearchCmd.Flags().StringSlice("fields", nil, "Fields to return")
+	addAllFlag(jiraSearchCmd)
 	jiraSearchCmd.Flags().Bool("json", false, "Output as JSON")
 
 	// Filter
 	jiraFilterListCmd.Flags().String("name", "", "Filter by name")
-	jiraFilterListCmd.Flags().Int("max-results", 50, "Maximum number of results")
+	jiraFilterListCmd.Flags().Int("max-results", 50, "Maximum number of results per page")
 	jiraFilterListCmd.Flags().Int("start-at", 0, "Index of the first result")
 	jiraFilterListCmd.Flags().Bool("favourites", false, "Show favourite filters")
 	jiraFilterListCmd.Flags().Bool("mine", false, "Show my filters")
+	addAllFlag(jiraFilterListCmd)
 	jiraFilterCmd.AddCommand(jiraFilterListCmd)
 
 	jiraFilterGetCmd.Flags().Bool("json", false, "Output as JSON")

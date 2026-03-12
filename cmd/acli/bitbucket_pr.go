@@ -34,8 +34,14 @@ func init() {
 			}
 
 			state, _ := cmd.Flags().GetString("state")
+			page, _ := cmd.Flags().GetInt("page")
+			pagelen, _ := cmd.Flags().GetInt("pagelen")
+			all, _ := cmd.Flags().GetBool("all")
 			prs, err := client.ListPullRequests(workspace, repoSlug, &bitbucket.ListPRsOptions{
-				State: state,
+				State:   state,
+				Page:    page,
+				PageLen: pagelen,
+				All:     all,
 			})
 			if err != nil {
 				return err
@@ -56,6 +62,7 @@ func init() {
 		},
 	}
 	prListCmd.Flags().String("state", "", "Filter by state (OPEN, MERGED, DECLINED, SUPERSEDED)")
+	addBBPaginationFlags(prListCmd)
 	bbPRCmd.AddCommand(prListCmd)
 
 	// pr get

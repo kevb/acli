@@ -33,6 +33,7 @@ var jiraIssueListCmd = &cobra.Command{
 		status, _ := cmd.Flags().GetString("status")
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		startAt, _ := cmd.Flags().GetInt("start-at")
+		all, _ := cmd.Flags().GetBool("all")
 		jsonOutput := isJSONOutput(cmd)
 
 		if jql == "" {
@@ -57,6 +58,21 @@ var jiraIssueListCmd = &cobra.Command{
 		results, err := client.SearchJQL(jql, startAt, maxResults, fields, nil)
 		if err != nil {
 			return err
+		}
+
+		allIssues := results.Issues
+		if all {
+			for len(allIssues) < results.Total {
+				next, err := client.SearchJQL(jql, startAt+len(allIssues), maxResults, fields, nil)
+				if err != nil {
+					return err
+				}
+				if len(next.Issues) == 0 {
+					break
+				}
+				allIssues = append(allIssues, next.Issues...)
+			}
+			results.Issues = allIssues
 		}
 
 		if jsonOutput {
@@ -86,7 +102,7 @@ var jiraIssueListCmd = &cobra.Command{
 				issue.Key, issueType, status, priority, assignee, issue.Fields.Summary)
 		}
 		w.Flush()
-		fmt.Fprintf(cmd.OutOrStdout(), "\nShowing %d of %d issues\n", len(results.Issues), results.Total)
+		printPaginationHint(cmd, len(results.Issues), results.Total)
 		return nil
 	},
 }
@@ -475,10 +491,26 @@ var jiraIssueCommentListCmd = &cobra.Command{
 
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		startAt, _ := cmd.Flags().GetInt("start-at")
+		all, _ := cmd.Flags().GetBool("all")
 
 		page, err := client.GetIssueComments(args[0], startAt, maxResults)
 		if err != nil {
 			return err
+		}
+
+		allComments := page.Comments
+		if all {
+			for len(allComments) < page.Total {
+				next, err := client.GetIssueComments(args[0], startAt+len(allComments), maxResults)
+				if err != nil {
+					return err
+				}
+				if len(next.Comments) == 0 {
+					break
+				}
+				allComments = append(allComments, next.Comments...)
+			}
+			page.Comments = allComments
 		}
 
 		if isJSONOutput(cmd) {
@@ -499,6 +531,7 @@ var jiraIssueCommentListCmd = &cobra.Command{
 			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", c.ID, author, c.Created, body)
 		}
 		w.Flush()
+		printPaginationHint(cmd, len(page.Comments), page.Total)
 		return nil
 	},
 }
@@ -650,10 +683,26 @@ var jiraIssueWorklogListCmd = &cobra.Command{
 
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		startAt, _ := cmd.Flags().GetInt("start-at")
+		all, _ := cmd.Flags().GetBool("all")
 
 		page, err := client.GetIssueWorklogs(args[0], startAt, maxResults)
 		if err != nil {
 			return err
+		}
+
+		allWorklogs := page.Worklogs
+		if all {
+			for len(allWorklogs) < page.Total {
+				next, err := client.GetIssueWorklogs(args[0], startAt+len(allWorklogs), maxResults)
+				if err != nil {
+					return err
+				}
+				if len(next.Worklogs) == 0 {
+					break
+				}
+				allWorklogs = append(allWorklogs, next.Worklogs...)
+			}
+			page.Worklogs = allWorklogs
 		}
 
 		if isJSONOutput(cmd) {
@@ -670,6 +719,7 @@ var jiraIssueWorklogListCmd = &cobra.Command{
 			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", wl.ID, author, wl.TimeSpent, wl.Started)
 		}
 		w.Flush()
+		printPaginationHint(cmd, len(page.Worklogs), page.Total)
 		return nil
 	},
 }
@@ -891,10 +941,26 @@ var jiraIssueChangelogCmd = &cobra.Command{
 
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		startAt, _ := cmd.Flags().GetInt("start-at")
+		all, _ := cmd.Flags().GetBool("all")
 
 		page, err := client.GetIssueChangelog(args[0], startAt, maxResults)
 		if err != nil {
 			return err
+		}
+
+		if all {
+			allValues := page.Values
+			for len(allValues) < page.Total {
+				next, err := client.GetIssueChangelog(args[0], startAt+len(allValues), maxResults)
+				if err != nil {
+					return err
+				}
+				if len(next.Values) == 0 {
+					break
+				}
+				allValues = append(allValues, next.Values...)
+			}
+			page.Values = allValues
 		}
 
 		if isJSONOutput(cmd) {
@@ -920,6 +986,7 @@ var jiraIssueChangelogCmd = &cobra.Command{
 			}
 		}
 		w.Flush()
+		printPaginationHint(cmd, len(histories), page.Total)
 		return nil
 	},
 }
@@ -1102,8 +1169,9 @@ func init() {
 	jiraIssueListCmd.Flags().String("project", "", "Filter by project key (uses profile default if not set)")
 	jiraIssueListCmd.Flags().String("assignee", "", "Filter by assignee")
 	jiraIssueListCmd.Flags().String("status", "", "Filter by status")
-	jiraIssueListCmd.Flags().Int("max-results", 50, "Maximum number of results")
+	jiraIssueListCmd.Flags().Int("max-results", 50, "Maximum number of results per page")
 	jiraIssueListCmd.Flags().Int("start-at", 0, "Index of the first result")
+	addAllFlag(jiraIssueListCmd)
 	jiraIssueListCmd.Flags().Bool("json", false, "Output as JSON")
 
 	// issue get flags
@@ -1136,8 +1204,9 @@ func init() {
 	_ = jiraIssueTransitionCmd.MarkFlagRequired("id")
 
 	// comment list flags
-	jiraIssueCommentListCmd.Flags().Int("max-results", 50, "Maximum number of results")
+	jiraIssueCommentListCmd.Flags().Int("max-results", 50, "Maximum number of results per page")
 	jiraIssueCommentListCmd.Flags().Int("start-at", 0, "Index of the first result")
+	addAllFlag(jiraIssueCommentListCmd)
 	jiraIssueCommentListCmd.Flags().Bool("json", false, "Output as JSON")
 
 	// comment add flags
@@ -1145,8 +1214,9 @@ func init() {
 	_ = jiraIssueCommentAddCmd.MarkFlagRequired("body")
 
 	// worklog list flags
-	jiraIssueWorklogListCmd.Flags().Int("max-results", 50, "Maximum number of results")
+	jiraIssueWorklogListCmd.Flags().Int("max-results", 50, "Maximum number of results per page")
 	jiraIssueWorklogListCmd.Flags().Int("start-at", 0, "Index of the first result")
+	addAllFlag(jiraIssueWorklogListCmd)
 
 	// worklog add flags
 	jiraIssueWorklogAddCmd.Flags().String("time-spent", "", "Time spent (e.g. '2h', '30m') (required)")
@@ -1161,8 +1231,9 @@ func init() {
 	_ = jiraIssueUnwatchCmd.MarkFlagRequired("account-id")
 
 	// changelog flags
-	jiraIssueChangelogCmd.Flags().Int("max-results", 50, "Maximum number of results")
+	jiraIssueChangelogCmd.Flags().Int("max-results", 50, "Maximum number of results per page")
 	jiraIssueChangelogCmd.Flags().Int("start-at", 0, "Index of the first result")
+	addAllFlag(jiraIssueChangelogCmd)
 
 	// remote link create flags
 	jiraIssueRemoteLinkCreateCmd.Flags().String("url", "", "URL of the remote link")

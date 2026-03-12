@@ -28,11 +28,25 @@ var jiraBoardListCmd = &cobra.Command{
 		project, _ := defaultProject(cmd)
 		boardType, _ := cmd.Flags().GetString("type")
 		name, _ := cmd.Flags().GetString("name")
+		all, _ := cmd.Flags().GetBool("all")
 		jsonFlag := isJSONOutput(cmd)
 
 		result, err := client.GetBoards(startAt, maxResults, project, boardType, name)
 		if err != nil {
 			return err
+		}
+		if all {
+			for !result.IsLast && len(result.Values) < result.Total {
+				next, err := client.GetBoards(startAt+len(result.Values), maxResults, project, boardType, name)
+				if err != nil {
+					return err
+				}
+				if len(next.Values) == 0 {
+					break
+				}
+				result.Values = append(result.Values, next.Values...)
+				result.IsLast = next.IsLast
+			}
 		}
 		if jsonFlag {
 			return outputJSON(result)
@@ -46,7 +60,9 @@ var jiraBoardListCmd = &cobra.Command{
 			}
 			fmt.Fprintf(w, "%d\t%s\t%s\t%s\n", b.ID, b.Name, b.Type, project)
 		}
-		return w.Flush()
+		w.Flush()
+		printPaginationHint(cmd, len(result.Values), result.Total)
+		return nil
 	},
 }
 
@@ -120,11 +136,24 @@ var jiraBoardIssuesCmd = &cobra.Command{
 		startAt, _ := cmd.Flags().GetInt("start-at")
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		jql, _ := cmd.Flags().GetString("jql")
+		all, _ := cmd.Flags().GetBool("all")
 		jsonFlag := isJSONOutput(cmd)
 
 		result, err := client.GetBoardIssues(id, startAt, maxResults, jql)
 		if err != nil {
 			return err
+		}
+		if all {
+			for len(result.Issues) < result.Total {
+				next, err := client.GetBoardIssues(id, startAt+len(result.Issues), maxResults, jql)
+				if err != nil {
+					return err
+				}
+				if len(next.Issues) == 0 {
+					break
+				}
+				result.Issues = append(result.Issues, next.Issues...)
+			}
 		}
 		if jsonFlag {
 			return outputJSON(result)
@@ -134,7 +163,9 @@ var jiraBoardIssuesCmd = &cobra.Command{
 		for _, issue := range result.Issues {
 			printIssueRow(w, issue)
 		}
-		return w.Flush()
+		w.Flush()
+		printPaginationHint(cmd, len(result.Issues), result.Total)
+		return nil
 	},
 }
 
@@ -154,11 +185,24 @@ var jiraBoardBacklogCmd = &cobra.Command{
 		startAt, _ := cmd.Flags().GetInt("start-at")
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		jql, _ := cmd.Flags().GetString("jql")
+		all, _ := cmd.Flags().GetBool("all")
 		jsonFlag := isJSONOutput(cmd)
 
 		result, err := client.GetBoardBacklog(id, startAt, maxResults, jql)
 		if err != nil {
 			return err
+		}
+		if all {
+			for len(result.Issues) < result.Total {
+				next, err := client.GetBoardBacklog(id, startAt+len(result.Issues), maxResults, jql)
+				if err != nil {
+					return err
+				}
+				if len(next.Issues) == 0 {
+					break
+				}
+				result.Issues = append(result.Issues, next.Issues...)
+			}
 		}
 		if jsonFlag {
 			return outputJSON(result)
@@ -168,7 +212,9 @@ var jiraBoardBacklogCmd = &cobra.Command{
 		for _, issue := range result.Issues {
 			printIssueRow(w, issue)
 		}
-		return w.Flush()
+		w.Flush()
+		printPaginationHint(cmd, len(result.Issues), result.Total)
+		return nil
 	},
 }
 
@@ -188,11 +234,25 @@ var jiraBoardSprintsCmd = &cobra.Command{
 		startAt, _ := cmd.Flags().GetInt("start-at")
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		state, _ := cmd.Flags().GetString("state")
+		all, _ := cmd.Flags().GetBool("all")
 		jsonFlag := isJSONOutput(cmd)
 
 		result, err := client.GetBoardSprints(id, startAt, maxResults, state)
 		if err != nil {
 			return err
+		}
+		if all {
+			for !result.IsLast && len(result.Values) < result.Total {
+				next, err := client.GetBoardSprints(id, startAt+len(result.Values), maxResults, state)
+				if err != nil {
+					return err
+				}
+				if len(next.Values) == 0 {
+					break
+				}
+				result.Values = append(result.Values, next.Values...)
+				result.IsLast = next.IsLast
+			}
 		}
 		if jsonFlag {
 			return outputJSON(result)
@@ -202,7 +262,9 @@ var jiraBoardSprintsCmd = &cobra.Command{
 		for _, s := range result.Values {
 			fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\n", s.ID, s.Name, s.State, s.StartDate, s.EndDate)
 		}
-		return w.Flush()
+		w.Flush()
+		printPaginationHint(cmd, len(result.Values), result.Total)
+		return nil
 	},
 }
 
@@ -221,11 +283,25 @@ var jiraBoardEpicsCmd = &cobra.Command{
 		}
 		startAt, _ := cmd.Flags().GetInt("start-at")
 		maxResults, _ := cmd.Flags().GetInt("max-results")
+		all, _ := cmd.Flags().GetBool("all")
 		jsonFlag := isJSONOutput(cmd)
 
 		result, err := client.GetBoardEpics(id, startAt, maxResults)
 		if err != nil {
 			return err
+		}
+		if all {
+			for !result.IsLast && len(result.Values) < result.Total {
+				next, err := client.GetBoardEpics(id, startAt+len(result.Values), maxResults)
+				if err != nil {
+					return err
+				}
+				if len(next.Values) == 0 {
+					break
+				}
+				result.Values = append(result.Values, next.Values...)
+				result.IsLast = next.IsLast
+			}
 		}
 		if jsonFlag {
 			return outputJSON(result)
@@ -235,7 +311,9 @@ var jiraBoardEpicsCmd = &cobra.Command{
 		for _, e := range result.Values {
 			fmt.Fprintf(w, "%d\t%s\t%s\t%v\t%s\n", e.ID, e.Key, e.Name, e.Done, e.Summary)
 		}
-		return w.Flush()
+		w.Flush()
+		printPaginationHint(cmd, len(result.Values), result.Total)
+		return nil
 	},
 }
 
@@ -245,7 +323,8 @@ func init() {
 	jiraBoardListCmd.Flags().String("type", "", "Filter by board type (scrum, kanban)")
 	jiraBoardListCmd.Flags().String("name", "", "Filter by board name")
 	jiraBoardListCmd.Flags().Int("start-at", 0, "Start index")
-	jiraBoardListCmd.Flags().Int("max-results", 50, "Max results")
+	jiraBoardListCmd.Flags().Int("max-results", 50, "Max results per page")
+	addAllFlag(jiraBoardListCmd)
 	jiraBoardListCmd.Flags().Bool("json", false, "Output as JSON")
 	jiraBoardCmd.AddCommand(jiraBoardListCmd)
 
@@ -258,28 +337,32 @@ func init() {
 
 	// board issues
 	jiraBoardIssuesCmd.Flags().Int("start-at", 0, "Start index")
-	jiraBoardIssuesCmd.Flags().Int("max-results", 50, "Max results")
+	jiraBoardIssuesCmd.Flags().Int("max-results", 50, "Max results per page")
 	jiraBoardIssuesCmd.Flags().String("jql", "", "JQL filter")
+	addAllFlag(jiraBoardIssuesCmd)
 	jiraBoardIssuesCmd.Flags().Bool("json", false, "Output as JSON")
 	jiraBoardCmd.AddCommand(jiraBoardIssuesCmd)
 
 	// board backlog
 	jiraBoardBacklogCmd.Flags().Int("start-at", 0, "Start index")
-	jiraBoardBacklogCmd.Flags().Int("max-results", 50, "Max results")
+	jiraBoardBacklogCmd.Flags().Int("max-results", 50, "Max results per page")
 	jiraBoardBacklogCmd.Flags().String("jql", "", "JQL filter")
+	addAllFlag(jiraBoardBacklogCmd)
 	jiraBoardBacklogCmd.Flags().Bool("json", false, "Output as JSON")
 	jiraBoardCmd.AddCommand(jiraBoardBacklogCmd)
 
 	// board sprints
 	jiraBoardSprintsCmd.Flags().Int("start-at", 0, "Start index")
-	jiraBoardSprintsCmd.Flags().Int("max-results", 50, "Max results")
+	jiraBoardSprintsCmd.Flags().Int("max-results", 50, "Max results per page")
 	jiraBoardSprintsCmd.Flags().String("state", "", "Filter by state (active, closed, future)")
+	addAllFlag(jiraBoardSprintsCmd)
 	jiraBoardSprintsCmd.Flags().Bool("json", false, "Output as JSON")
 	jiraBoardCmd.AddCommand(jiraBoardSprintsCmd)
 
 	// board epics
 	jiraBoardEpicsCmd.Flags().Int("start-at", 0, "Start index")
-	jiraBoardEpicsCmd.Flags().Int("max-results", 50, "Max results")
+	jiraBoardEpicsCmd.Flags().Int("max-results", 50, "Max results per page")
+	addAllFlag(jiraBoardEpicsCmd)
 	jiraBoardEpicsCmd.Flags().Bool("json", false, "Output as JSON")
 	jiraBoardCmd.AddCommand(jiraBoardEpicsCmd)
 }

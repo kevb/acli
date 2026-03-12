@@ -169,11 +169,24 @@ var jiraSprintIssuesCmd = &cobra.Command{
 		startAt, _ := cmd.Flags().GetInt("start-at")
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		jql, _ := cmd.Flags().GetString("jql")
+		all, _ := cmd.Flags().GetBool("all")
 		jsonFlag := isJSONOutput(cmd)
 
 		result, err := client.GetSprintIssues(id, startAt, maxResults, jql)
 		if err != nil {
 			return err
+		}
+		if all {
+			for len(result.Issues) < result.Total {
+				next, err := client.GetSprintIssues(id, startAt+len(result.Issues), maxResults, jql)
+				if err != nil {
+					return err
+				}
+				if len(next.Issues) == 0 {
+					break
+				}
+				result.Issues = append(result.Issues, next.Issues...)
+			}
 		}
 		if jsonFlag {
 			return outputJSON(result)
@@ -183,7 +196,9 @@ var jiraSprintIssuesCmd = &cobra.Command{
 		for _, issue := range result.Issues {
 			printIssueRow(w, issue)
 		}
-		return w.Flush()
+		w.Flush()
+		printPaginationHint(cmd, len(result.Issues), result.Total)
+		return nil
 	},
 }
 
@@ -256,11 +271,24 @@ var jiraEpicIssuesCmd = &cobra.Command{
 		startAt, _ := cmd.Flags().GetInt("start-at")
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		jql, _ := cmd.Flags().GetString("jql")
+		all, _ := cmd.Flags().GetBool("all")
 		jsonFlag := isJSONOutput(cmd)
 
 		result, err := client.GetEpicIssues(args[0], startAt, maxResults, jql)
 		if err != nil {
 			return err
+		}
+		if all {
+			for len(result.Issues) < result.Total {
+				next, err := client.GetEpicIssues(args[0], startAt+len(result.Issues), maxResults, jql)
+				if err != nil {
+					return err
+				}
+				if len(next.Issues) == 0 {
+					break
+				}
+				result.Issues = append(result.Issues, next.Issues...)
+			}
 		}
 		if jsonFlag {
 			return outputJSON(result)
@@ -270,7 +298,9 @@ var jiraEpicIssuesCmd = &cobra.Command{
 		for _, issue := range result.Issues {
 			printIssueRow(w, issue)
 		}
-		return w.Flush()
+		w.Flush()
+		printPaginationHint(cmd, len(result.Issues), result.Total)
+		return nil
 	},
 }
 
@@ -338,8 +368,9 @@ func init() {
 
 	// sprint issues
 	jiraSprintIssuesCmd.Flags().Int("start-at", 0, "Start index")
-	jiraSprintIssuesCmd.Flags().Int("max-results", 50, "Max results")
+	jiraSprintIssuesCmd.Flags().Int("max-results", 50, "Max results per page")
 	jiraSprintIssuesCmd.Flags().String("jql", "", "JQL filter")
+	addAllFlag(jiraSprintIssuesCmd)
 	jiraSprintIssuesCmd.Flags().Bool("json", false, "Output as JSON")
 	jiraSprintCmd.AddCommand(jiraSprintIssuesCmd)
 
@@ -352,8 +383,9 @@ func init() {
 
 	// epic issues
 	jiraEpicIssuesCmd.Flags().Int("start-at", 0, "Start index")
-	jiraEpicIssuesCmd.Flags().Int("max-results", 50, "Max results")
+	jiraEpicIssuesCmd.Flags().Int("max-results", 50, "Max results per page")
 	jiraEpicIssuesCmd.Flags().String("jql", "", "JQL filter")
+	addAllFlag(jiraEpicIssuesCmd)
 	jiraEpicIssuesCmd.Flags().Bool("json", false, "Output as JSON")
 	jiraEpicCmd.AddCommand(jiraEpicIssuesCmd)
 

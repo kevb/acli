@@ -46,7 +46,10 @@ type PullRequest struct {
 }
 
 type ListPRsOptions struct {
-	State string
+	State   string
+	Page    int
+	PageLen int
+	All     bool
 }
 
 func (c *Client) ListPullRequests(workspace, repoSlug string, opts *ListPRsOptions) ([]PullRequest, error) {
@@ -55,12 +58,34 @@ func (c *Client) ListPullRequests(workspace, repoSlug string, opts *ListPRsOptio
 		if opts.State != "" {
 			params.Set("state", opts.State)
 		}
+		if opts.Page > 0 {
+			params.Set("page", fmt.Sprintf("%d", opts.Page))
+		}
+		if opts.PageLen > 0 {
+			params.Set("pagelen", fmt.Sprintf("%d", opts.PageLen))
+		}
 	}
 
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests",
 		url.PathEscape(workspace), url.PathEscape(repoSlug))
 	if len(params) > 0 {
 		path += "?" + params.Encode()
+	}
+
+	if opts != nil && opts.All {
+		pages, err := c.getAll(path)
+		if err != nil && len(pages) == 0 {
+			return nil, err
+		}
+		var prs []PullRequest
+		for _, pg := range pages {
+			var pagePRs []PullRequest
+			if err := json.Unmarshal(pg.Values, &pagePRs); err != nil {
+				return prs, fmt.Errorf("parsing pull requests: %w", err)
+			}
+			prs = append(prs, pagePRs...)
+		}
+		return prs, nil
 	}
 
 	data, err := c.get(path)
