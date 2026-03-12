@@ -36,10 +36,16 @@ func init() {
 			role, _ := cmd.Flags().GetString("role")
 			q, _ := cmd.Flags().GetString("query")
 			sort, _ := cmd.Flags().GetString("sort")
+			page, _ := cmd.Flags().GetInt("page")
+			pagelen, _ := cmd.Flags().GetInt("pagelen")
+			all, _ := cmd.Flags().GetBool("all")
 			repos, err := client.ListRepositories(workspace, &bitbucket.ListReposOptions{
-				Role: role,
-				Q:    q,
-				Sort: sort,
+				Role:    role,
+				Q:       q,
+				Sort:    sort,
+				Page:    page,
+				PageLen: pagelen,
+				All:     all,
 			})
 			if err != nil {
 				return err
@@ -61,6 +67,7 @@ func init() {
 	repoListCmd.Flags().String("role", "", "Filter by role (admin, contributor, member, owner)")
 	repoListCmd.Flags().String("query", "", "Filter with query (Bitbucket query syntax)")
 	repoListCmd.Flags().String("sort", "", "Sort field (e.g. -updated_on)")
+	addBBPaginationFlags(repoListCmd)
 	bbRepoCmd.AddCommand(repoListCmd)
 
 	// repo get

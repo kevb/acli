@@ -29,12 +29,26 @@ var jiraDashboardListCmd = &cobra.Command{
 		startAt, _ := cmd.Flags().GetInt("start-at")
 		maxResults, _ := cmd.Flags().GetInt("max-results")
 		name, _ := cmd.Flags().GetString("name")
+		all, _ := cmd.Flags().GetBool("all")
 		jsonFlag := isJSONOutput(cmd)
 
 		if name != "" {
 			result, err := client.SearchDashboards(name, startAt, maxResults)
 			if err != nil {
 				return err
+			}
+			if all {
+				for !result.IsLast && len(result.Values) < result.Total {
+					next, err := client.SearchDashboards(name, startAt+len(result.Values), maxResults)
+					if err != nil {
+						return err
+					}
+					if len(next.Values) == 0 {
+						break
+					}
+					result.Values = append(result.Values, next.Values...)
+					result.IsLast = next.IsLast
+				}
 			}
 			if jsonFlag {
 				return outputJSON(result)
@@ -49,12 +63,25 @@ var jiraDashboardListCmd = &cobra.Command{
 				fmt.Fprintf(w, "%s\t%s\t%s\n", d.ID, d.Name, owner)
 			}
 			w.Flush()
+			printPaginationHint(cmd, len(result.Values), result.Total)
 			return nil
 		}
 
 		result, err := client.GetDashboards(startAt, maxResults)
 		if err != nil {
 			return err
+		}
+		if all {
+			for len(result.Dashboards) < result.Total {
+				next, err := client.GetDashboards(startAt+len(result.Dashboards), maxResults)
+				if err != nil {
+					return err
+				}
+				if len(next.Dashboards) == 0 {
+					break
+				}
+				result.Dashboards = append(result.Dashboards, next.Dashboards...)
+			}
 		}
 		if jsonFlag {
 			return outputJSON(result)
@@ -69,6 +96,7 @@ var jiraDashboardListCmd = &cobra.Command{
 			fmt.Fprintf(w, "%s\t%s\t%s\n", d.ID, d.Name, owner)
 		}
 		w.Flush()
+		printPaginationHint(cmd, len(result.Dashboards), result.Total)
 		return nil
 	},
 }
@@ -299,8 +327,9 @@ var jiraDashboardGadgetRemoveCmd = &cobra.Command{
 func init() {
 	// Dashboard list
 	jiraDashboardListCmd.Flags().String("name", "", "Search dashboards by name")
-	jiraDashboardListCmd.Flags().Int("max-results", 50, "Maximum number of results")
+	jiraDashboardListCmd.Flags().Int("max-results", 50, "Maximum number of results per page")
 	jiraDashboardListCmd.Flags().Int("start-at", 0, "Index of the first result")
+	addAllFlag(jiraDashboardListCmd)
 	jiraDashboardListCmd.Flags().Bool("json", false, "Output as JSON")
 	jiraDashboardCmd.AddCommand(jiraDashboardListCmd)
 

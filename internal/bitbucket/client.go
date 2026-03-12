@@ -142,3 +142,24 @@ type PaginatedResponse struct {
 	Previous string          `json:"previous"`
 	Values   json.RawMessage `json:"values"`
 }
+
+// getAll follows pagination links to fetch all pages and returns all PaginatedResponses.
+func (c *Client) getAll(firstPagePath string) ([]PaginatedResponse, error) {
+	var pages []PaginatedResponse
+	path := firstPagePath
+
+	for path != "" {
+		data, err := c.get(path)
+		if err != nil {
+			return pages, err
+		}
+		var page PaginatedResponse
+		if err := json.Unmarshal(data, &page); err != nil {
+			return pages, fmt.Errorf("parsing response: %w", err)
+		}
+		pages = append(pages, page)
+		path = page.Next
+	}
+
+	return pages, nil
+}

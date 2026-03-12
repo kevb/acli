@@ -37,9 +37,12 @@ type Repository struct {
 }
 
 type ListReposOptions struct {
-	Role string
-	Q    string
-	Sort string
+	Role    string
+	Q       string
+	Sort    string
+	Page    int
+	PageLen int
+	All     bool
 }
 
 func (c *Client) ListRepositories(workspace string, opts *ListReposOptions) ([]Repository, error) {
@@ -54,11 +57,33 @@ func (c *Client) ListRepositories(workspace string, opts *ListReposOptions) ([]R
 		if opts.Sort != "" {
 			params.Set("sort", opts.Sort)
 		}
+		if opts.Page > 0 {
+			params.Set("page", fmt.Sprintf("%d", opts.Page))
+		}
+		if opts.PageLen > 0 {
+			params.Set("pagelen", fmt.Sprintf("%d", opts.PageLen))
+		}
 	}
 
 	path := fmt.Sprintf("/repositories/%s", url.PathEscape(workspace))
 	if len(params) > 0 {
 		path += "?" + params.Encode()
+	}
+
+	if opts != nil && opts.All {
+		pages, err := c.getAll(path)
+		if err != nil && len(pages) == 0 {
+			return nil, err
+		}
+		var repos []Repository
+		for _, pg := range pages {
+			var pageRepos []Repository
+			if err := json.Unmarshal(pg.Values, &pageRepos); err != nil {
+				return repos, fmt.Errorf("parsing repositories: %w", err)
+			}
+			repos = append(repos, pageRepos...)
+		}
+		return repos, nil
 	}
 
 	data, err := c.get(path)

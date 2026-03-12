@@ -29,10 +29,25 @@ func init() {
 			query, _ := cmd.Flags().GetString("query")
 			maxResults, _ := cmd.Flags().GetInt("max-results")
 			startAt, _ := cmd.Flags().GetInt("start-at")
+			all, _ := cmd.Flags().GetBool("all")
 
 			result, err := client.SearchProjects(query, startAt, maxResults, "")
 			if err != nil {
 				return err
+			}
+
+			if all {
+				for !result.IsLast && len(result.Values) < result.Total {
+					next, err := client.SearchProjects(query, startAt+len(result.Values), maxResults, "")
+					if err != nil {
+						return err
+					}
+					if len(next.Values) == 0 {
+						break
+					}
+					result.Values = append(result.Values, next.Values...)
+					result.IsLast = next.IsLast
+				}
 			}
 
 			if jsonOutput {
@@ -48,12 +63,15 @@ func init() {
 				}
 				fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", p.Key, p.Name, p.ProjectTypeKey, lead)
 			}
-			return w.Flush()
+			w.Flush()
+			printPaginationHint(cmd, len(result.Values), result.Total)
+			return nil
 		},
 	}
 	projectListCmd.Flags().String("query", "", "Search query to filter projects")
-	projectListCmd.Flags().Int("max-results", 50, "Maximum number of results")
+	projectListCmd.Flags().Int("max-results", 50, "Maximum number of results per page")
 	projectListCmd.Flags().Int("start-at", 0, "Index of the first result")
+	addAllFlag(projectListCmd)
 	projectListCmd.Flags().Bool("json", false, "Output as JSON")
 	jiraProjectCmd.AddCommand(projectListCmd)
 
