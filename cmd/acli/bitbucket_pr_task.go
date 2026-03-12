@@ -135,8 +135,33 @@ func init() {
 				Content: body,
 			}
 
+			filePath, _ := cmd.Flags().GetString("file")
+			line, _ := cmd.Flags().GetInt("line")
+
+			if filePath != "" && line == 0 {
+				return fmt.Errorf("--line is required when --file is specified")
+			}
+			if line != 0 && filePath == "" {
+				return fmt.Errorf("--file is required when --line is specified")
+			}
+
 			commentID, _ := cmd.Flags().GetInt("comment-id")
-			if cmd.Flags().Changed("comment-id") {
+
+			if filePath != "" && cmd.Flags().Changed("comment-id") {
+				return fmt.Errorf("--comment-id cannot be used with --file/--line")
+			}
+
+			if filePath != "" {
+				// Create an inline comment first, then attach the task to it
+				comment, err := client.CreatePRCommentInline(workspace, repoSlug, prID, body, &bitbucket.InlineCommentParams{
+					Path: filePath,
+					To:   line,
+				})
+				if err != nil {
+					return fmt.Errorf("creating inline comment: %w", err)
+				}
+				req.CommentID = &comment.ID
+			} else if cmd.Flags().Changed("comment-id") {
 				req.CommentID = &commentID
 			}
 
@@ -149,6 +174,8 @@ func init() {
 	}
 	taskCreateCmd.Flags().String("body", "", "Task content (required)")
 	taskCreateCmd.Flags().Int("comment-id", 0, "Associate task with a comment")
+	taskCreateCmd.Flags().String("file", "", "File path to attach the task to a specific line (creates an inline comment)")
+	taskCreateCmd.Flags().Int("line", 0, "Line number in the new version of the file (requires --file)")
 	bbPRTaskCmd.AddCommand(taskCreateCmd)
 
 	// task update
