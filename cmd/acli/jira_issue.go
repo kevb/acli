@@ -896,9 +896,9 @@ var jiraIssueAttachmentDownloadCmd = &cobra.Command{
 			return err
 		}
 
-		output, _ := cmd.Flags().GetString("output")
-		if output == "" {
-			output = att.Filename
+		dest, _ := cmd.Flags().GetString("dest")
+		if dest == "" {
+			dest = att.Filename
 		}
 
 		data, err := client.DownloadAttachmentContent(args[0])
@@ -906,11 +906,11 @@ var jiraIssueAttachmentDownloadCmd = &cobra.Command{
 			return err
 		}
 
-		if err := os.WriteFile(output, data, 0644); err != nil {
+		if err := os.WriteFile(dest, data, 0644); err != nil {
 			return err
 		}
 
-		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Downloaded: %s (%d bytes)\n", output, len(data))
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Downloaded: %s (%d bytes)\n", dest, len(data))
 		return nil
 	},
 }
@@ -1375,7 +1375,7 @@ func init() {
 	jiraIssueRemoteLinkCmd.AddCommand(jiraIssueRemoteLinkDeleteCmd)
 
 	// Wire attachment subcommands
-	jiraIssueAttachmentDownloadCmd.Flags().StringP("output", "o", "", "Output file path (default: original filename)")
+	jiraIssueAttachmentDownloadCmd.Flags().String("dest", "", "Destination file path (default: original filename)")
 	jiraIssueAttachmentCmd.AddCommand(jiraIssueAttachmentListCmd)
 	jiraIssueAttachmentCmd.AddCommand(jiraIssueAttachmentDownloadCmd)
 
